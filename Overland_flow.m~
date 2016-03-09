@@ -1,0 +1,98 @@
+%Overland Flow Model written by REH 3/2016
+
+clear all 
+figure (1)
+clf
+figure (2)
+clf
+
+%% Initialize
+%x array
+dx = 100;
+xmax = 20000;
+x = 0:dx:xmax;
+
+%time array
+tmax=12000;
+dt=1; % it has to be really really small for the code to run
+t=0:dt:tmax; %creates an array of time steps (time)
+imax=length(t);
+nplots = 100; %so our code runs faster - we'll plot one hundred times
+tplot = tmax/nplots; %so our code runs faster - divides total time up into 100 time steps
+
+%slope array
+zmax=1000;
+S = 0.05; %slope of the  bottom - similar to Macgregor
+zb = zmax - (S*x);
+
+%Constants:
+n=0.007; %moderate from Jarret, 1985 Determination of roughness coeficients
+%for Streams in Colorado, USGS
+R=0.02; %m/hr-- this is a little higher than the national average of 0.938 m/yr
+R=0.02/3600; %m/s
+I=.015; %m/hr
+I=0.015/3600; %m/s
+H0=0; %m picked arbitrarily 
+% Q0=893000.0741253; %m3/year
+
+%other initial arrays:
+H=H0*ones(size(x));
+
+%% RUN
+for i=1:imax
+    K=H(1:end-1) + 0.5*diff(H);
+ubar=(1/n)*(K.^0.667)*(S^0.5); %Manning equation
+Q=ubar.*K; %flux based on height of the water
+Q=[0 Q Q(end)];
+dQdx=diff(Q)/dx; %change in flux based on where you are
+dHdt=-dQdx+(R-I); %change in height of the water in the next box based on flux out
+%dHdt=[dHdt, dHdt(end)];
+H=H+dHdt*dt;
+H=max(H,0);
+
+%z=zb+H;
+awl(i)=(sum(H))*dx;
+afl(i)=(sum(Q))*dx;
+
+if rem(t(i),tplot)==0
+
+    %water height across the area
+    figure (1)
+    subplot (2,1,1)
+    plot(x/1000,H,'k','linewidth',1.5)
+    hold off
+    ht=text(12,0.04,['  ',num2str(t(i)), 'seconds '],'fontsize',18);
+    axis ([0, xmax/1000, 0, 0.05])
+    title ('Height of Water', 'fontname','arial','fontsize',21)
+    xlabel('Distance (km)','fontname','arial','fontsize',21)
+    ylabel('Water Height (m)','fontname','arial','fontsize',21)
+     
+     subplot (2,1,2)
+     plot(x/1000, Q(2:end))
+     hold off
+     axis ([0,xmax/1000,0, 0.03])
+     title ('Flux of water' 'fontname','times new roman' 'fontsize', 21)
+      ht=text(12,0.02,['  ',num2str(t(i)), 'seconds '],'fontsize',18);
+      xlabel('Distance (km)','fontname','arial','fontsize',21)
+     ylabel('flux (m^2/s)','fontname','arial','fontsize',21)
+    
+      pause (0.1)
+end 
+end
+
+   figure(2)
+   subplot (2,1,1)
+plot (t,awl,'k','linewidth',1.5)
+     title ('total water level (m)','fontname','arial','fontsize',21)
+     xlabel('Time (seconds)','fontname','arial','fontsize',21)
+     ylabel('Volume (m^3)','fontname','arial','fontsize',21)
+     hold off
+     
+    subplot (2,1,2)
+     plot (t,afl, 'k','linewidth',1.5)
+     titla ('Total water 
+     xlabel('Time (seconds)','fontname','arial','fontsize',21)
+     ylabel('Flux (m^3/s)','fontname','arial','fontsize',21)
+      hold off
+ 
+     
